@@ -1,17 +1,16 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+import { ulid } from 'ulid';
+
+import Panel from './components/Panel';
 
 import { colors } from './designSystem';
 
+import useChageState, { State } from './hooks/useChangeState';
+
 import users from '../data/users';
-
-import random from '../utils/random';
-
-type User = {
-    id: number;
-    name: string;
-}
 
 const Container = styled.div`
   display: flex;
@@ -20,68 +19,79 @@ const Container = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 2em;
+  font-size: 1.2em;
   font-weight: 500;
-  margin: 1em 0;
+  margin-block: 1em;
 `;
 
-const List = styled.ul`
+const Wrapper = styled.div`
+  margin-block: 1em;
+  padding: 1em;
+  height: 200px;
+  border: 1px solid ${colors.border};
+  border-radius: 3px;
+  overflow: hidden;
+`;
+
+type ListProps = {
+  isMoving: boolean;
+}
+
+const List = styled.ul<ListProps>`
+  padding: 0;
+  list-style-type: none;
+  ${({ isMoving }) => (isMoving ? css`
+    animation: 1.5s linear infinite movedown;
+  ` : '')}
+
+  @keyframes movedown {
+    from {
+      transform: translateY(-50%);
+    }
+
+    to {
+      transform: translateY(0%);
+    }
+  }
 `;
 
 const Item = styled.li`
   margin-block: .5em; 
   padding: .5em 5em;
   text-align: center;
-`;
-
-const Button = styled.button`
-  font-size: 1.1em;
-  text-align: center;
-  margin: 2em;
-  padding: 1em;
-  width: 70%;
-  border: 0px solid;
-  border-radius: 3px;
-  color: ${colors.white};
-  background-color: ${colors.primary};
+  border-top: 1px solid #DDD;
 `;
 
 export default function App() {
-  const [winners, pick] = useState<User[]>([]);
+  const { winners, state, changeState } = useChageState();
 
   const handleClick = () => {
-    const chosenUsers = random({
-      start: 0,
-      end: users.length,
-      count: 2,
-    }).map((i) => users[i]);
-
-    pick(chosenUsers);
+    changeState();
   };
+
+  const moving = state === State.START || state === State.END;
+
+  const usersForDisplay = useRef([
+    ...users, ...users,
+  ].map((u) => ({ ...u, key: ulid() })));
 
   return (
     <Container>
       <Title>분리수거 가챠 🎱</Title>
-      <List>
-        {users.map((user) => (
-          <Item key={user.id}>
-            {user.name}
-          </Item>
-        ))}
-      </List>
-      <Button type="button" onClick={handleClick}>
-        PICK ME UP 🎰
-      </Button>
-      {winners.length ? (
-        <p>
-          축하합니다!
-          {' '}
-          {winners.map((winner) => winner.name).join(', ')}
-          {' '}
-          당첨입니다!
-          😜
-        </p>
-      ) : null}
+      <Wrapper>
+        <List isMoving={moving}>
+          {usersForDisplay.current.map((user) => (
+            <Item key={ulid()}>
+              {user.name}
+            </Item>
+          ))}
+        </List>
+      </Wrapper>
+      <Panel
+        winners={winners}
+        state={state}
+        onClick={handleClick}
+      />
     </Container>
   );
 }

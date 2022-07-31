@@ -10,5 +10,6 @@ export const mq = {
 export const colors = {
   white: '#FFFFFF',
   black: '#000000',
-  primary: '#1971fe',
+  primary: '#1971FE',
+  border: '#DDDDDD',
 };
